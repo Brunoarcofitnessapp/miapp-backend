@@ -1,21 +1,29 @@
 const express = require('express');
 const AuthController = require('../controllers/authController');
 const UserController = require('../controllers/userController');
+const { imageuploadmiddleware } = require('../util/multer'); // Importamos multer
 
 const userRouter = express.Router();
 
-// Endpoint para probar la ruta base
+// Ruta base de prueba
 userRouter.get('/', (req, res) => {
     res.status(200).json({
         message: "User endpoint is working!",
     });
 });
 
-// Endpoints de autenticación y gestión de usuarios
+// Endpoints
 userRouter.post('/login', AuthController.LoginwithEmailandPassword);
 userRouter.post('/signup', AuthController.signup);
 userRouter.post('/updateMeasures/:id', UserController.updateUserMeasurables);
-userRouter.post('/uploadimage/:id', UserController.uploadUserBodyImage);
+
+// Integrar multer para procesar imágenes
+userRouter.post(
+    '/uploadimage/:id',
+    imageuploadmiddleware.single('image'), // Middleware para manejar una sola imagen
+    UserController.uploadUserBodyImage
+);
+
 userRouter.post('/deleteimages/:id', UserController.deleteImageOfUserBody);
 userRouter.get('/updateMeasureRecords/:id/:measure', UserController.updateUserBodyMeasureRecord);
 userRouter.post('/updateusername', AuthController.AuthMiddleware, UserController.updateusername);
