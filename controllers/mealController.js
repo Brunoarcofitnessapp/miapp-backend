@@ -16,17 +16,18 @@ exports.createMeal = catchAsync(async (req, res, next) => {
     let imageUrl = "";
     if (req.file) {
         const result = await new Promise((resolve, reject) => {
-            cloudinary.uploader.upload_stream(
-                { folder: "meals" },
-                (error, result) => {
-                    if (error) {
-                        return reject(new AppError("Error uploading image to Cloudinary", 500));
-                    }
-                    resolve(result);
+            const stream = cloudinary.uploader.upload_stream({ folder: "meals" }, (error, result) => {
+                if (error) {
+                    return reject(new AppError("Error uploading image to Cloudinary", 500));
                 }
-            ).end(req.file.buffer);
+                resolve(result);
+            });
+            stream.end(req.file.buffer);
         });
+
         imageUrl = result.secure_url;
+    } else {
+        return next(new AppError("Photo is required", 400));
     }
 
     // Crear el documento de la comida
@@ -55,15 +56,13 @@ exports.uploadMealImage = catchAsync(async (req, res, next) => {
 
     // Subir imagen a Cloudinary
     const result = await new Promise((resolve, reject) => {
-        cloudinary.uploader.upload_stream(
-            { folder: "meals" },
-            (error, result) => {
-                if (error) {
-                    return reject(new AppError("Error uploading image to Cloudinary", 500));
-                }
-                resolve(result);
+        const stream = cloudinary.uploader.upload_stream({ folder: "meals" }, (error, result) => {
+            if (error) {
+                return reject(new AppError("Error uploading image to Cloudinary", 500));
             }
-        ).end(req.file.buffer);
+            resolve(result);
+        });
+        stream.end(req.file.buffer);
     });
 
     // Actualizar la imagen en la comida
@@ -128,58 +127,6 @@ exports.getMealIngridients = catchAsync(async (req, res, next) => {
     res.status(200).json({
         status: "success",
         data: meal.ingredients,
-    });
-});
-
-// Enviar ingredientes por email
-exports.Sendmealingridientstoemail = catchAsync(async (req, res, next) => {
-    const { email, ingredients } = req.body;
-
-    if (!email || !ingredients) {
-        return next(new AppError("Email and ingredients are required", 400));
-    }
-
-    res.status(200).json({
-        status: "success",
-        message: "Ingredients sent to email",
-    });
-});
-
-// Obtener todos los ingredientes de un usuario
-exports.getAllIngridientslist = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-
-    const meals = await Meal.find({ user: id });
-
-    if (!meals) {
-        return next(new AppError("No meals found for this user", 404));
-    }
-
-    const ingredients = meals.flatMap((meal) => meal.ingredients);
-
-    res.status(200).json({
-        status: "success",
-        data: ingredients,
-    });
-});
-
-// Eliminar un usuario de una comida
-exports.removeuserfrommeal = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-
-    const updatedMeal = await Meal.findByIdAndUpdate(
-        id,
-        { $unset: { user: "" } },
-        { new: true }
-    );
-
-    if (!updatedMeal) {
-        return next(new AppError("Meal not found", 404));
-    }
-
-    res.status(200).json({
-        status: "success",
-        data: updatedMeal,
     });
 });
 
