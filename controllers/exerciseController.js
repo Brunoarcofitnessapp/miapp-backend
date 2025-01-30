@@ -21,38 +21,46 @@ exports.createExercise = catchAsync(async (req, res, next) => {
     return next(new AppError("Please provide all the required fields", 400));
   }
 
-  days = JSON.parse(days);
-  weeks = JSON.parse(weeks);
+  // Asegurarse de que los datos JSON sean válidos
+  let parsedDays, parsedWeeks;
+  try {
+    parsedDays = JSON.parse(days);
+    parsedWeeks = JSON.parse(weeks);
+  } catch (error) {
+    return next(new AppError("Invalid JSON format for days or weeks", 400));
+  }
+
+  // Validar la imagen
+  if (!req.file) {
+    return next(new AppError("Image file is required", 400));
+  }
 
   try {
-    // Verificar si existe un archivo antes de intentar procesarlo
-    if (!req.file) {
-      return next(new AppError("Image file is required", 400));
-    }
-
+    // Subir la imagen a Cloudinary
     const photo = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream((error, result) => {
+      cloudinary.uploader.upload_stream({ resource_type: "image" }, (error, result) => {
         if (error) return reject(new AppError("Error uploading image to Cloudinary", 400));
         resolve(result);
       }).end(req.file.buffer);
     });
 
+    // Crear el ejercicio
     const exercise = await Exercise.create({
       name,
-      days,
-      weeks,
-      superset: superset,
+      days: parsedDays,
+      weeks: parsedWeeks,
+      superset: superset || false,
       video: mongoose.Types.ObjectId(video),
       exercisetype,
       image: photo.secure_url,
     });
 
-    res.status(200).json({
+    res.status(201).json({
       status: "success",
       data: exercise,
     });
   } catch (error) {
-    next(new AppError(error.message, 400));
+    next(new AppError(error.message, 500));
   }
 });
 
