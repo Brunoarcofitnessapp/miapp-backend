@@ -15,13 +15,13 @@ mealRouter.get("/", (req, res) => {
 // Rutas para las operaciones de meals
 mealRouter.post(
     "/createMeal",
-    multer.imageuploadmiddleware.single("photo"), // Middleware para procesar la imagen (clave: "photo")
+    multer.imageuploadmiddleware.single("photo"), // Middleware para procesar la imagen
     MealController.createMeal
 );
 
 mealRouter.post(
     "/uploadMealImage/:id",
-    multer.imageuploadmiddleware.single("photo"), // Middleware para procesar la imagen (clave: "photo")
+    multer.imageuploadmiddleware.single("photo"), // Middleware para procesar la imagen
     MealController.uploadMealImage
 );
 
