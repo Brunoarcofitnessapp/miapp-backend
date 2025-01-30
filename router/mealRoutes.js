@@ -12,25 +12,14 @@ mealRouter.get("/", (req, res) => {
     });
 });
 
-// Rutas para las operaciones de meals
+// Crear una comida
 mealRouter.post(
     "/createMeal",
     multer.imageuploadmiddleware.single("photo"), // Middleware para procesar la imagen
     MealController.createMeal
 );
 
-mealRouter.post(
-    "/uploadMealImage/:id",
-    multer.imageuploadmiddleware.single("photo"), // Middleware para procesar la imagen
-    MealController.uploadMealImage
-);
-
-mealRouter.get("/getMeal/:id/:day", MealController.getMeal);
+// Obtener detalles de una comida
 mealRouter.get("/getMealDetails/:id", MealController.getMealDetails);
-mealRouter.get("/getMealIngs/:id/:day", MealController.getMealIngridients);
-mealRouter.post("/sendingstoemail", MealController.Sendmealingridientstoemail);
-mealRouter.post("/getallings/:id", MealController.getAllIngridientslist);
-mealRouter.post("/removeuserfrommeal/:id", MealController.removeuserfrommeal);
-mealRouter.post("/createmacros/:id", MealController.createMacro);
 
 module.exports = mealRouter;
