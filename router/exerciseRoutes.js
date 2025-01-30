@@ -25,4 +25,17 @@ exerciseRouter.post(
   ExerciseController.removeuserfromexercise
 );
 
+// Modificar un ejercicio existente
+exerciseRouter.patch(
+  "/updateExercise/:id",
+  ExerciseController.exerciseimageuploadmiddleware,
+  ExerciseController.updateExercise
+);
+
+// Eliminar un ejercicio existente
+exerciseRouter.delete(
+  "/deleteExercise/:id",
+  ExerciseController.deleteExercise
+);
+
 module.exports = exerciseRouter;
