@@ -22,4 +22,7 @@ mealRouter.post(
 // Obtener detalles de una comida
 mealRouter.get("/getMealDetails/:id", MealController.getMealDetails);
 
+// Eliminar una comida
+mealRouter.delete("/deleteMeal/:id", MealController.deleteMeal);
+
 module.exports = mealRouter;
