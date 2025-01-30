@@ -1,31 +1,38 @@
 const express = require("express");
+const AuthController = require("../controllers/authController"); // Si este no es necesario, lo puedes eliminar.
 const MealController = require("../controllers/mealController");
+const multer = require("../util/multer"); // Middleware para la carga de imágenes.
 
 const mealRouter = express.Router();
 
-// Ruta de prueba para verificar que el endpoint esté funcionando
+// Ruta de prueba para verificar que el endpoint esté funcionando.
 mealRouter.get("/", (req, res) => {
-  res.status(200).json({
-    message: "Meal endpoint is working!",
-  });
+    res.status(200).json({
+        message: "Meal endpoint is working!",
+    });
 });
 
-// Crear una comida con imagen
+// Rutas para las operaciones de meals.
 mealRouter.post(
-  "/createMeal",
-  MealController.createMeal
+    "/createMeal",
+    multer.imageuploadmiddleware.single("image"), // Middleware para procesar la imagen.
+    MealController.createMeal
 );
 
-// Subir o actualizar una imagen de una comida existente
 mealRouter.post(
-  "/uploadMealImage/:id",
-  MealController.uploadMealImage
+    "/uploadMealImage/:id",
+    multer.imageuploadmiddleware.single("image"), // Middleware para procesar la imagen.
+    MealController.uploadMealImage
 );
 
-// Obtener detalles de una comida
+mealRouter.get("/getMeal/:id/:day", MealController.getMeal);
 mealRouter.get("/getMealDetails/:id", MealController.getMealDetails);
+mealRouter.get("/getMealIngs/:id/:day", MealController.getMealIngridients);
 
-// Eliminar una comida
-mealRouter.delete("/deleteMeal/:id", MealController.deleteMeal);
+mealRouter.post("/sendingstoemail", MealController.Sendmealingridientstoemail);
+mealRouter.post("/getallings/:id", MealController.getAllIngridientslist);
+mealRouter.post("/removeuserfrommeal/:id", MealController.removeuserfrommeal);
+
+mealRouter.post("/createmacros/:id", MealController.createMacro);
 
 module.exports = mealRouter;
