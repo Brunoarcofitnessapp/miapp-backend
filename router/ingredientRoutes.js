@@ -1,15 +1,16 @@
-const express = require("express");
-const IngredientController = require("../controllers/ingredientController");
+const express = require('express');
+const IngredientController = require('../controllers/ingredientController');
 
 const ingredientRouter = express.Router();
 
-// Crear un ingrediente con imagen
+// Ruta para crear un ingrediente con imagen
 ingredientRouter.post(
-  "/createIngredient",
+  '/createIngredient',
+  IngredientController.ingridentimageuploadmiddleware,
   IngredientController.createIngredient
 );
 
-// Obtener todos los ingredientes
-ingredientRouter.get("/getAllIngredients", IngredientController.getIngredients);
+// Ruta para obtener todos los ingredientes
+ingredientRouter.get('/getAllIngredients', IngredientController.getIngredients);
 
 module.exports = ingredientRouter;
