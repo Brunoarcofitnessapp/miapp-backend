@@ -117,6 +117,64 @@ exports.removeuserfromexercise = catchAsync(async (req, res, next) => {
     { new: true }
   );
 
+  // Modificar un ejercicio existente
+exports.updateExercise = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return next(new AppError("Exercise ID is required", 400));
+  }
+
+  try {
+    let updatedData = req.body;
+
+    // Si se envía una nueva imagen, se sube a Cloudinary
+    if (req.file) {
+      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        resource_type: "image",
+      });
+      updatedData.image = uploadResult.secure_url;
+      fs.unlinkSync(req.file.path); // Eliminar archivo local
+    }
+
+    const updatedExercise = await Exercise.findByIdAndUpdate(id, updatedData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedExercise) {
+      return next(new AppError("Exercise not found", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: updatedExercise,
+    });
+  } catch (error) {
+    next(new AppError(error.message, 500));
+  }
+});
+
+// Eliminar un ejercicio existente
+exports.deleteExercise = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return next(new AppError("Exercise ID is required", 400));
+  }
+
+  const exercise = await Exercise.findByIdAndDelete(id);
+
+  if (!exercise) {
+    return next(new AppError("Exercise not found", 404));
+  }
+
+  res.status(204).json({
+    status: "success",
+    data: null,
+  });
+});
+
   res.status(200).json({
     status: "success",
   });
