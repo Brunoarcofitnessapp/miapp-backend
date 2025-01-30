@@ -2,41 +2,47 @@ const catchAsync = require("../util/catchAsync");
 const AppError = require("../util/appError");
 const Ingredient = require("../models/ingredientModel");
 const cloudinary = require("../util/cloudinary");
-const multer = require("../util/multer");
-const fs = require("fs");
-const APIfeatures = require("../util/apifeatures");
+const multer = require("multer");
 
-exports.ingridentimageuploadmiddleware =
-  multer.imageuploadmiddleware.single("image");
+// Configuración de Multer para la subida de imágenes
+const upload = multer({ storage: multer.memoryStorage() });
 
-exports.createIngredient = catchAsync(async (req, res, next) => {
-  const { name, unit } = req.body;
+exports.createIngredient = [
+  upload.single("image"), // Middleware para procesar la imagen
+  catchAsync(async (req, res, next) => {
+    const { name, unit } = req.body;
 
-  if (!name || !unit) {
-    return next(new AppError("Please provide all the required fields", 400));
-  }
+    if (!name || !unit) {
+      return next(new AppError("Please provide all the required fields", 400));
+    }
 
-  const photo = await cloudinary.uploader.upload(req.file.path);
+    let imageUrl = "";
+    if (req.file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream((error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }).end(req.file.buffer);
+      });
 
-  if (photo.secure_url) {
+      imageUrl = uploadResult.secure_url;
+    }
+
     const ingredient = await Ingredient.create({
       name,
       unit,
-      image: photo.secure_url,
+      image: imageUrl,
     });
-    fs.unlinkSync(req.file.path);
-    res.status(200).json({
+
+    res.status(201).json({
       status: "success",
       data: ingredient,
     });
-  }
-});
+  }),
+];
 
 exports.getIngredients = catchAsync(async (req, res, next) => {
-  
-    // const ingredients = await Ingredient.find({})
-
-    const total = await Ingredient.find({}).countDocuments();
+  const total = await Ingredient.find({}).countDocuments();
 
   const features = new APIfeatures(Ingredient.find({}), req.query)
     .filter()
@@ -44,6 +50,7 @@ exports.getIngredients = catchAsync(async (req, res, next) => {
     .fieldslimiting()
     .pagination();
   const ingredients = await features.query;
+
   res.status(200).json({
     status: "success",
     data: ingredients,
