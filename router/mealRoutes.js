@@ -1,22 +1,26 @@
 const express = require("express");
 const AuthController = require("../controllers/authController");
 const MealController = require("../controllers/mealController");
-const multer = require("../util/multer");
 
 const mealRouter = express.Router();
 
 // Ruta de prueba para verificar que el endpoint esté funcionando
 mealRouter.get("/", (req, res) => {
-    res.status(200).json({
-        message: "Meal endpoint is working!",
-    });
+  res.status(200).json({
+    message: "Meal endpoint is working!",
+  });
 });
 
-// Crear una comida
+// Crear una comida con imagen
 mealRouter.post(
-    "/createMeal",
-    multer.imageuploadmiddleware.single("photo"), // Middleware para procesar la imagen
-    MealController.createMeal
+  "/createMeal",
+  MealController.createMeal
+);
+
+// Subir o actualizar una imagen de una comida existente
+mealRouter.post(
+  "/uploadMealImage/:id",
+  MealController.uploadMealImage
 );
 
 // Obtener detalles de una comida
