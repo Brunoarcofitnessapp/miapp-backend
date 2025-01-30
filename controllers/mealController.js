@@ -20,7 +20,6 @@ exports.createMeal = [
 
     let imageUrl = "";
     if (req.file) {
-      // Subida de la imagen a Cloudinary
       const uploadResult = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "meals" },
