@@ -8,8 +8,10 @@ const fs = require("fs");
 const APIfeatures = require("../util/apifeatures");
 const SetsandReps = require("../models/setsandrepsmodel");
 
-exports.exerciseimageuploadmiddleware =
-  multer.imageuploadmiddleware.single("image");
+// Usar correctamente la función de Multer
+const { imageuploadmiddleware } = require("../util/multer");
+
+exports.exerciseimageuploadmiddleware = imageuploadmiddleware.single("image");
 
 // Crear un ejercicio con imagen
 exports.createExercise = catchAsync(async (req, res, next) => {
@@ -23,11 +25,17 @@ exports.createExercise = catchAsync(async (req, res, next) => {
   weeks = JSON.parse(weeks);
 
   try {
-    // Subir la imagen a Cloudinary
-    const photo = await cloudinary.uploader.upload_stream((error, result) => {
-      if (error) return next(new AppError("Error uploading image to Cloudinary", 400));
-      return result;
-    }).end(req.file.buffer);
+    // Verificar si existe un archivo antes de intentar procesarlo
+    if (!req.file) {
+      return next(new AppError("Image file is required", 400));
+    }
+
+    const photo = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream((error, result) => {
+        if (error) return reject(new AppError("Error uploading image to Cloudinary", 400));
+        resolve(result);
+      }).end(req.file.buffer);
+    });
 
     const exercise = await Exercise.create({
       name,
