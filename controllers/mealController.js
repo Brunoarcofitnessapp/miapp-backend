@@ -2,6 +2,7 @@ const Meal = require("../models/mealModel");
 const catchAsync = require("../util/catchAsync");
 const AppError = require("../util/appError");
 const cloudinary = require("../util/cloudinary");
+const multer = require("../util/multer");
 
 // Crear una comida con imagen
 exports.createMeal = catchAsync(async (req, res, next) => {
@@ -55,5 +56,21 @@ exports.getMealDetails = catchAsync(async (req, res, next) => {
     res.status(200).json({
         status: "success",
         data: meal,
+    });
+});
+
+// Eliminar una comida
+exports.deleteMeal = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+
+    const meal = await Meal.findByIdAndDelete(id);
+
+    if (!meal) {
+        return next(new AppError("Meal not found", 404));
+    }
+
+    res.status(200).json({
+        status: "success",
+        message: "Meal deleted successfully",
     });
 });
