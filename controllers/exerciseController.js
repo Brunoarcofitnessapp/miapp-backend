@@ -13,7 +13,6 @@ const { imageuploadmiddleware } = require("../util/multer");
 
 exports.exerciseimageuploadmiddleware = imageuploadmiddleware.single("image");
 
-// Crear un ejercicio con imagen
 exports.createExercise = catchAsync(async (req, res, next) => {
   let { name, days, weeks, superset, video, exercisetype } = req.body;
 
@@ -21,7 +20,7 @@ exports.createExercise = catchAsync(async (req, res, next) => {
     return next(new AppError("Please provide all the required fields", 400));
   }
 
-  // Asegurarse de que los datos JSON sean válidos
+  // Parsear datos JSON
   let parsedDays, parsedWeeks;
   try {
     parsedDays = JSON.parse(days);
@@ -30,21 +29,18 @@ exports.createExercise = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid JSON format for days or weeks", 400));
   }
 
-  // Validar la imagen
+  // Verificar si se envió una imagen
   if (!req.file) {
     return next(new AppError("Image file is required", 400));
   }
 
   try {
     // Subir la imagen a Cloudinary
-    const photo = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream({ resource_type: "image" }, (error, result) => {
-        if (error) return reject(new AppError("Error uploading image to Cloudinary", 400));
-        resolve(result);
-      }).end(req.file.buffer);
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "image",
     });
 
-    // Crear el ejercicio
+    // Crear el ejercicio en la base de datos
     const exercise = await Exercise.create({
       name,
       days: parsedDays,
@@ -52,8 +48,11 @@ exports.createExercise = catchAsync(async (req, res, next) => {
       superset: superset || false,
       video: mongoose.Types.ObjectId(video),
       exercisetype,
-      image: photo.secure_url,
+      image: uploadResult.secure_url,
     });
+
+    // Eliminar archivo local después de subir a Cloudinary
+    fs.unlinkSync(req.file.path);
 
     res.status(201).json({
       status: "success",
