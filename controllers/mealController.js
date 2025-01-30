@@ -4,7 +4,7 @@ const AppError = require("../util/appError");
 const cloudinary = require("../util/cloudinary");
 const multer = require("multer");
 
-// Configuración de Multer para la subida de imágenes
+// Configuración de Multer para procesar imágenes
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Crear una comida con imagen
@@ -50,7 +50,7 @@ exports.createMeal = [
   }),
 ];
 
-// Subir o actualizar una imagen de una comida
+// Subir o actualizar la imagen de una comida
 exports.uploadMealImage = [
   upload.single("photo"),
   catchAsync(async (req, res, next) => {
