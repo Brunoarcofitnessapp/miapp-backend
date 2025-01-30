@@ -2,7 +2,7 @@ const Exercise = require("../models/exerciseModel");
 const catchAsync = require("../util/catchAsync");
 const AppError = require("../util/appError");
 const cloudinary = require("../util/cloudinary");
-const multer = require("../util/multer");
+const multer = require("multer");
 const { default: mongoose } = require("mongoose");
 const fs = require("fs");
 const APIfeatures = require("../util/apifeatures");
@@ -11,9 +11,11 @@ const SetsandReps = require("../models/setsandrepsmodel");
 exports.exerciseimageuploadmiddleware =
   multer.imageuploadmiddleware.single("image");
 
+// Crear un ejercicio con imagen
 exports.createExercise = catchAsync(async (req, res, next) => {
-  let { name, days, weeks, superset, video, exercisetype} = req.body;
-  if (!name || !days || !weeks || !video  || !exercisetype) {
+  let { name, days, weeks, superset, video, exercisetype } = req.body;
+
+  if (!name || !days || !weeks || !video || !exercisetype) {
     return next(new AppError("Please provide all the required fields", 400));
   }
 
@@ -21,7 +23,11 @@ exports.createExercise = catchAsync(async (req, res, next) => {
   weeks = JSON.parse(weeks);
 
   try {
-    const photo = await cloudinary.uploader.upload(req.file.path);
+    // Subir la imagen a Cloudinary
+    const photo = await cloudinary.uploader.upload_stream((error, result) => {
+      if (error) return next(new AppError("Error uploading image to Cloudinary", 400));
+      return result;
+    }).end(req.file.buffer);
 
     const exercise = await Exercise.create({
       name,
@@ -33,9 +39,6 @@ exports.createExercise = catchAsync(async (req, res, next) => {
       image: photo.secure_url,
     });
 
-    fs.unlinkSync(req.file.path)
-
-
     res.status(200).json({
       status: "success",
       data: exercise,
@@ -45,47 +48,17 @@ exports.createExercise = catchAsync(async (req, res, next) => {
   }
 });
 
-// exports.getExercises = catchAsync(async (req, res, next) => {
-//   const { day, week } = req.body;
-//   const { id } = req.params;
-
-//   console.log(day, week, id);
-
-//   if (!day || !week || !id) {
-//     return next(new AppError("Please provide all the required fields", 400));
-//   }
-
-//   const exercises = await Exercise.find({
-//     users: { $elemMatch: { $eq: id } },
-//     days: { $elemMatch: { $eq: day } },
-//     weeks: { $elemMatch: { $eq: week } },
-//   }).select("-days -weeks -users").sort({ superset: -1 });
-
-//   console.log(exercises);
-
-//   if (exercises.length === 0) {
-//     return  res.status(200).json({
-//         status: "success",
-//         data:[],
-//       });
-//   }
-
-//   res.status(200).json({
-//     status: "success",
-//     data: exercises,
-//   });
-// });
-
+// Obtener todos los ejercicios
 exports.getAllExercises = catchAsync(async (req, res, next) => {
-  const total = await Exercise.find({}).countDocuments()
-  console.log(total)
+  const total = await Exercise.find({}).countDocuments();
 
   const features = new APIfeatures(Exercise.find({}), req.query)
-  .filter()
-  .sorting()
-  .fieldslimiting()
-  .pagination();
-const exercises = await features.query;
+    .filter()
+    .sorting()
+    .fieldslimiting()
+    .pagination();
+  const exercises = await features.query;
+
   res.status(200).json({
     status: "success",
     data: exercises,
@@ -93,16 +66,18 @@ const exercises = await features.query;
   });
 });
 
+// Obtener todos los ejercicios de un usuario
 exports.getAllUserExercises = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  console.log(id);
+
   if (!id) {
-    return next(new AppError("user Id is required", 400));
+    return next(new AppError("User ID is required", 400));
   }
 
   const exercises = await SetsandReps.find({ users: { $in: id } });
+
   if (exercises.length < 1) {
-    return next(new AppError("Exercise Not Found", 404));
+    return next(new AppError("No exercises found", 404));
   }
 
   res.status(200).json({
@@ -111,25 +86,23 @@ exports.getAllUserExercises = catchAsync(async (req, res, next) => {
   });
 });
 
+// Remover usuario de un ejercicio
 exports.removeuserfromexercise = catchAsync(async (req, res, next) => {
+  const { exerciseid, userid } = req.params;
 
-  const {exerciseid,userid} = req.params;
-  
-
-  if(!exerciseid || !userid){
-      return next(new AppError("User Id is must Field", 400));
+  if (!exerciseid || !userid) {
+    return next(new AppError("Exercise ID and User ID are required", 400));
   }
 
-  await SetsandReps.findByIdAndUpdate(exerciseid, {
-      $pull: {
-          users: {
-              $eq: userid
-          }
-      }
-  },{new: true})
+  await SetsandReps.findByIdAndUpdate(
+    exerciseid,
+    {
+      $pull: { users: { $eq: userid } },
+    },
+    { new: true }
+  );
 
   res.status(200).json({
-      status: "success",
-  })
-
-})
+    status: "success",
+  });
+});
