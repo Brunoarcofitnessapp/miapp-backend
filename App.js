@@ -32,7 +32,7 @@ app.use("/api/meal", mealRouter);
 app.use("/api/video", videoRouter);
 app.use("/api/exercise", exerciseRouter);
 app.use("/api/record", recordRouter);
-app.use("/api/ings", ingredientRouter);
+app.use("/api/ingredients", ingredientRouter);
 app.use("/api/setsandreps", setsandrepsrouter);
 app.use("/api/template", templateRouter);
 app.use("/api/admin", adminRouter);
