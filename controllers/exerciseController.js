@@ -2,7 +2,6 @@ const Exercise = require("../models/exerciseModel");
 const catchAsync = require("../util/catchAsync");
 const AppError = require("../util/appError");
 const cloudinary = require("../util/cloudinary");
-const multer = require("multer");
 const { default: mongoose } = require("mongoose");
 const fs = require("fs");
 const APIfeatures = require("../util/apifeatures");
@@ -13,6 +12,7 @@ const { imageuploadmiddleware } = require("../util/multer");
 
 exports.exerciseimageuploadmiddleware = imageuploadmiddleware.single("image");
 
+// Crear un ejercicio con imagen
 exports.createExercise = catchAsync(async (req, res, next) => {
   let { name, days, weeks, superset, video, exercisetype } = req.body;
 
@@ -20,7 +20,6 @@ exports.createExercise = catchAsync(async (req, res, next) => {
     return next(new AppError("Please provide all the required fields", 400));
   }
 
-  // Parsear datos JSON
   let parsedDays, parsedWeeks;
   try {
     parsedDays = JSON.parse(days);
@@ -29,18 +28,15 @@ exports.createExercise = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid JSON format for days or weeks", 400));
   }
 
-  // Verificar si se envió una imagen
   if (!req.file) {
     return next(new AppError("Image file is required", 400));
   }
 
   try {
-    // Subir la imagen a Cloudinary
     const uploadResult = await cloudinary.uploader.upload(req.file.path, {
       resource_type: "image",
     });
 
-    // Crear el ejercicio en la base de datos
     const exercise = await Exercise.create({
       name,
       days: parsedDays,
@@ -51,7 +47,6 @@ exports.createExercise = catchAsync(async (req, res, next) => {
       image: uploadResult.secure_url,
     });
 
-    // Eliminar archivo local después de subir a Cloudinary
     fs.unlinkSync(req.file.path);
 
     res.status(201).json({
@@ -117,7 +112,12 @@ exports.removeuserfromexercise = catchAsync(async (req, res, next) => {
     { new: true }
   );
 
-  // Modificar un ejercicio existente
+  res.status(200).json({
+    status: "success",
+  });
+});
+
+// Modificar un ejercicio existente
 exports.updateExercise = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
@@ -128,13 +128,12 @@ exports.updateExercise = catchAsync(async (req, res, next) => {
   try {
     let updatedData = req.body;
 
-    // Si se envía una nueva imagen, se sube a Cloudinary
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(req.file.path, {
         resource_type: "image",
       });
       updatedData.image = uploadResult.secure_url;
-      fs.unlinkSync(req.file.path); // Eliminar archivo local
+      fs.unlinkSync(req.file.path);
     }
 
     const updatedExercise = await Exercise.findByIdAndUpdate(id, updatedData, {
@@ -172,10 +171,5 @@ exports.deleteExercise = catchAsync(async (req, res, next) => {
   res.status(204).json({
     status: "success",
     data: null,
-  });
-});
-
-  res.status(200).json({
-    status: "success",
   });
 });
