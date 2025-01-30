@@ -1,50 +1,63 @@
-const catchAsync = require('../util/catchAsync')
-const AppError = require('../util/appError')
-const multer = require('../util/multer')
-const cloudinary = require('../util/cloudinary')
-const Video = require('../models/videoModel')
-const fs = require('fs')
-const APIfeatures = require('../util/apifeatures')
+const catchAsync = require("../util/catchAsync");
+const AppError = require("../util/appError");
+const multer = require("../util/multer");
+const cloudinary = require("../util/cloudinary");
+const Video = require("../models/videoModel");
+const fs = require("fs");
 
-exports.uploadvideomiddleware = multer.multervideouploadmiddleware.single('video')
+// Middleware para manejar la carga de videos
+exports.uploadvideomiddleware = multer.multervideouploadmiddleware.single(
+  "video"
+);
 
-
+// Crear un video
 exports.createVideo = catchAsync(async (req, res, next) => {
-    
-    const {title,type} = req.body
+  const { title, type } = req.body;
 
-    console.log(req.file.size,'title',title);
+  if (!req.file) {
+    return next(new AppError("Video file is required", 400));
+  }
 
-    try {
-        const data = await cloudinary.uploader.upload(req.file.path,{resource_type: "video",})
+  if (!title || !type) {
+    return next(new AppError("Please provide title and type", 400));
+  }
 
-        const video = await Video.create({
-            title,
-            video: data.secure_url,
-            publicid:data.public_id,
-            type:type
-        })
+  try {
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(
+        req.file.path,
+        { resource_type: "video" },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+    });
 
-        fs.unlinkSync(req.file.path)
+    const video = await Video.create({
+      title,
+      video: uploadResult.secure_url,
+      publicid: uploadResult.public_id,
+      type,
+    });
 
-        res.status(200).json({
-            status: "success",
-            data: video,
-        })
-        
-    } catch (error) {
-        next(new AppError(error.message, 400))
-    }
-})
-
-exports.getAllVideos = catchAsync(async (req, res, next) => {
-
-    const videos = await Video.find({})
-  
+    // Eliminar el archivo del servidor después de subirlo
+    fs.unlinkSync(req.file.path);
 
     res.status(200).json({
-        status: "success",
-        data: videos,
-    })
+      status: "success",
+      data: video,
+    });
+  } catch (error) {
+    next(new AppError(error.message, 400));
+  }
+});
 
-})
+// Obtener todos los videos
+exports.getAllVideos = catchAsync(async (req, res, next) => {
+  const videos = await Video.find({});
+  res.status(200).json({
+    status: "success",
+    data: videos,
+  });
+});
