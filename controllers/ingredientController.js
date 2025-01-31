@@ -3,7 +3,6 @@ const AppError = require("../util/appError");
 const Ingredient = require("../models/ingredientModel");
 const cloudinary = require("../util/cloudinary");
 const multer = require("multer");
-const APIfeatures = require("../util/APIfeatures");
 
 // Configuración de Multer para la subida de imágenes
 const upload = multer({ storage: multer.memoryStorage() });
